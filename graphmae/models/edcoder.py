@@ -196,13 +196,13 @@ class PreModel(nn.Module):
     
     def encoding_mask_noise(self, g, x, mask_rate=0.3):
         num_nodes = g.num_nodes()
-        perm = torch.randperm(num_nodes, device=x.device)
-        num_mask_nodes = int(mask_rate * num_nodes)
+        perm = torch.randperm(num_nodes, device=x.device)   # 创建随机排列矩阵，shape = [num_nodes]
+
 
         # random masking
-        num_mask_nodes = int(mask_rate * num_nodes)
-        mask_nodes = perm[: num_mask_nodes]
-        keep_nodes = perm[num_mask_nodes: ]
+        num_mask_nodes = int(mask_rate * num_nodes)         # 掩盖节点数
+        mask_nodes = perm[: num_mask_nodes]                 # 被掩盖节点的索引
+        keep_nodes = perm[num_mask_nodes: ]                 # 保持不变的索引
 
         if self._replace_rate > 0:
             num_noise_nodes = int(self._replace_rate * num_mask_nodes)
@@ -217,9 +217,9 @@ class PreModel(nn.Module):
         else:
             out_x = x.clone()
             token_nodes = mask_nodes
-            out_x[mask_nodes] = 0.0
+            out_x[mask_nodes] = 0.0    # 被掩盖节点 置 0
 
-        out_x[token_nodes] += self.enc_mask_token
+        out_x[token_nodes] += self.enc_mask_token # 将被掩盖节点 变为可学习的掩码
         use_g = g.clone()
 
         return use_g, out_x, (mask_nodes, keep_nodes)
@@ -232,7 +232,7 @@ class PreModel(nn.Module):
     
     def mask_attr_prediction(self, g, x):
         pre_use_g, use_x, (mask_nodes, keep_nodes) = self.encoding_mask_noise(g, x, self._mask_rate)
-
+        # 若去掉边比例大于0，则对边进行随机删除，（当前未使用）
         if self._drop_edge_rate > 0:
             use_g, masked_edges = drop_edge(pre_use_g, self._drop_edge_rate, return_edges=True)
         else:

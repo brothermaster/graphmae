@@ -227,10 +227,10 @@ class GATConv(nn.Module):
                     feat_dst = self.fc_dst(h_dst).view(
                         *dst_prefix_shape, self._num_heads, self._out_feats)
             else:
-                src_prefix_shape = dst_prefix_shape = feat.shape[:-1]
+                src_prefix_shape = dst_prefix_shape = feat.shape[:-1]  # shape = 排除特征维数的其他
                 h_src = h_dst = self.feat_drop(feat)
                 feat_src = feat_dst = self.fc(h_src).view(
-                    *src_prefix_shape, self._num_heads, self._out_feats)
+                    *src_prefix_shape, self._num_heads, self._out_feats)    # 投影，变为多头
                 if graph.is_block:
                     feat_dst = feat_src[:graph.number_of_dst_nodes()]
                     h_dst = h_dst[:graph.number_of_dst_nodes()]
@@ -247,18 +247,18 @@ class GATConv(nn.Module):
             # which further speeds up computation and saves memory footprint.
             el = (feat_src * self.attn_l).sum(dim=-1).unsqueeze(-1)
             er = (feat_dst * self.attn_r).sum(dim=-1).unsqueeze(-1)
-            graph.srcdata.update({'ft': feat_src, 'el': el})
-            graph.dstdata.update({'er': er})
+            graph.srcdata.update({'ft': feat_src, 'el': el})    # 为字典添加 键值对 ft是投影后的多头源节点特征矩阵，el是节点的左注意力系数
+            graph.dstdata.update({'er': er})                    # el是节点的右注意力系数
             # compute edge attention, el and er are a_l Wh_i and a_r Wh_j respectively.
-            graph.apply_edges(fn.u_add_v('el', 'er', 'e'))
-            e = self.leaky_relu(graph.edata.pop('e'))
+            graph.apply_edges(fn.u_add_v('el', 'er', 'e'))      # 源节点注意力（el）加 目标节点注意力(er) 得到边注意力（e），论文公式（1）
+            e = self.leaky_relu(graph.edata.pop('e'))           # 取出 注意力
             # e[e == 0] = -1e3
             # e = graph.edata.pop('e')
             # compute softmax
-            graph.edata['a'] = self.attn_drop(edge_softmax(graph, e))
+            graph.edata['a'] = self.attn_drop(edge_softmax(graph, e))   # 获取softmax后的注意力,论文公式（3）
             # message passing
             graph.update_all(fn.u_mul_e('ft', 'a', 'm'),
-                             fn.sum('m', 'ft'))
+                             fn.sum('m', 'ft')) # message_func, reduce_func // 源节点投影后特征（ft) 逐元素乘 边上注意力(a) 求和所有边上结果（m）更新 特征（ft）,完成消息传递，论文公式（5）
             rst = graph.dstdata['ft']
 
             # bias
