@@ -41,58 +41,86 @@ def get_current_lr(optimizer):
 
 def build_args():
     parser = argparse.ArgumentParser(description="GAT")
+    # 随机种子
     parser.add_argument("--seeds", type=int, nargs="+", default=[0])
+    # 数据集
     parser.add_argument("--dataset", type=str, default="cora")
+    # 运算设备
     parser.add_argument("--device", type=int, default=-1)
+    # 训练轮数
     parser.add_argument("--max_epoch", type=int, default=200,
                         help="number of training epochs")
+    # 学习率调整计划所需步骤数
     parser.add_argument("--warmup_steps", type=int, default=-1)
 
+    # 注意力头数
     parser.add_argument("--num_heads", type=int, default=4,
                         help="number of hidden attention heads")
+    # decoder中最后一层注意力头数
     parser.add_argument("--num_out_heads", type=int, default=1,
                         help="number of output attention heads")
+    # encoder 层数
     parser.add_argument("--num_layers", type=int, default=2,
                         help="number of hidden layers")
+    # 隐藏层大小
     parser.add_argument("--num_hidden", type=int, default=256,
                         help="number of hidden units")
+    # 是否使用残差连接 ，默认不使用
     parser.add_argument("--residual", action="store_true", default=False,
                         help="use residual connection")
+    # 特征dropout概率
     parser.add_argument("--in_drop", type=float, default=.2,
                         help="input feature dropout")
+    # 注意力分数dropout概率
     parser.add_argument("--attn_drop", type=float, default=.1,
                         help="attention dropout")
+    # 标准化方法
     parser.add_argument("--norm", type=str, default=None)
+    # 学习率
     parser.add_argument("--lr", type=float, default=0.005,
                         help="learning rate")
+    # 优化器权重惩罚
     parser.add_argument("--weight_decay", type=float, default=5e-4,
                         help="weight decay")
     parser.add_argument("--negative_slope", type=float, default=0.2,
                         help="the negative slope of leaky relu for GAT")
+    # 激活函数
     parser.add_argument("--activation", type=str, default="prelu")
+    # 掩盖概率
     parser.add_argument("--mask_rate", type=float, default=0.5)
+    # 生成边的掩盖矩阵中 0的概率
     parser.add_argument("--drop_edge_rate", type=float, default=0.0)
+    # 所有掩盖节点中 随即替换为其他节点的比例
     parser.add_argument("--replace_rate", type=float, default=0.0)
-
     parser.add_argument("--encoder", type=str, default="gat")
     parser.add_argument("--decoder", type=str, default="gat")
     parser.add_argument("--loss_fn", type=str, default="sce")
+    # SCE损失函数的幂   超参数 alpha
     parser.add_argument("--alpha_l", type=float, default=2, help="`pow`coefficient for `sce` loss")
     parser.add_argument("--optimizer", type=str, default="adam")
-    
+    # evaluation finetuning 时 最大轮数
     parser.add_argument("--max_epoch_f", type=int, default=30)
+    # evaluation finetuning 时 学习率
     parser.add_argument("--lr_f", type=float, default=0.001, help="learning rate for evaluation")
+    # evaluation finetuning 时 优化器权重惩罚
     parser.add_argument("--weight_decay_f", type=float, default=0.0, help="weight decay for evaluation")
+    # 节点分类评估的encoder True时使用逻辑回归
     parser.add_argument("--linear_prob", action="store_true", default=False)
-    
+    # 是否加载模型
     parser.add_argument("--load_model", action="store_true")
+    # 是否保存模型
     parser.add_argument("--save_model", action="store_true")
+    # 是否使用最佳参数
     parser.add_argument("--use_cfg", action="store_true")
+    # 是否记录
     parser.add_argument("--logging", action="store_true")
+    # 是否使用学习率调整计划
     parser.add_argument("--scheduler", action="store_true", default=False)
+    # 是否拼接隐藏张量
     parser.add_argument("--concat_hidden", action="store_true", default=False)
 
     # for graph classification
+    #  a non-parameterized graph pooling (readout) function
     parser.add_argument("--pooling", type=str, default="mean")
     parser.add_argument("--deg4feat", action="store_true", default=False, help="use node degree as input feature")
     parser.add_argument("--batch_size", type=int, default=32)
@@ -153,6 +181,12 @@ def create_optimizer(opt, model, lr, weight_decay, get_num_layer=None, get_layer
 
 # -------------------
 def mask_edge(graph, mask_prob):
+    '''
+    To generate edge mask that using bernoulli probability(mask_prob) to determinate whether tensor of corresponding position is one
+    
+    return:
+        edge mask
+    '''
     E = graph.num_edges()
 
     mask_rates = torch.FloatTensor(np.ones(E) * mask_prob)
