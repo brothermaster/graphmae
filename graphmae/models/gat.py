@@ -119,11 +119,18 @@ class GATConv(nn.Module):
                  norm=None,
                  concat_out=True):
         super(GATConv, self).__init__()
+
+        # 头数
         self._num_heads = num_heads
+        # 源特征维度，目标特征维度
         self._in_src_feats, self._in_dst_feats = expand_as_pair(in_feats)
+        # 输出特征维度
         self._out_feats = out_feats
         self._allow_zero_in_degree = allow_zero_in_degree
+        # 是否合并多头注意力输出
         self._concat_out = concat_out
+
+        # 若in_feats为元组，使用两个 W矩阵，否则使用一个 W矩阵
 
         if isinstance(in_feats, tuple):
             self.fc_src = nn.Linear(
@@ -203,6 +210,7 @@ class GATConv(nn.Module):
                                    'to be `True` when constructing this module will '
                                    'suppress the check and let the code run.')
 
+            # compute projection of src and dst by Wh_i，Wh_j
             if isinstance(feat, tuple):
                 src_prefix_shape = feat[0].shape[:-1]
                 dst_prefix_shape = feat[1].shape[:-1]
