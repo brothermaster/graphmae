@@ -104,7 +104,7 @@ def build_args():
     parser.add_argument("--lr_f", type=float, default=0.001, help="learning rate for evaluation")
     # evaluation finetuning 时 优化器权重惩罚
     parser.add_argument("--weight_decay_f", type=float, default=0.0, help="weight decay for evaluation")
-    # 节点分类评估的encoder True时使用逻辑回归
+    # 节点分类评估的encoder True时使用线性概率
     parser.add_argument("--linear_prob", action="store_true", default=False)
     # 是否加载模型
     parser.add_argument("--load_model", action="store_true")
